@@ -9,12 +9,14 @@ type System struct {
 	memory    Memory
 	registers Registers
 	stack     CallStack
+	opcodes   map[OpcodeName]Opcode
 	// TODO: Display - for handing the visual output.
 	// TODO: CPU - for handling the decoding and execution of instructions.
 }
 
 func (sys *System) Run() error {
 	sys.registers.PC = RomStart // Starts at address 512.
+	sys.opcodes = GetOpcodeRef()
 
 	for ; ; sys.registers.PC += 2 {
 		even, odd, err := sys.memory.GetInstBytes(&sys.registers)
@@ -23,6 +25,8 @@ func (sys *System) Run() error {
 		}
 
 		inst := InstFromBytes(even, odd)
+
+		sys.Execute(inst)
 
 		fmt.Printf("Dual-Byte: %X\n", inst)
 	}

@@ -21,14 +21,6 @@ func (err RomTooLargeError) Error() string {
 	return fmt.Sprintf("rom file size %d is too large (max %d)", err.RomSize, RomCapacity)
 }
 
-type OutOfBoundsError struct {
-	Address uint16
-}
-
-func (err OutOfBoundsError) Error() string {
-	return fmt.Sprintf("could not access memory contents at address %d (max %d)", err.Address, MemoryCapacity-InstBytes)
-}
-
 func (mem *Memory) LoadRom(filePath string) error {
 	rom, err := os.ReadFile(filePath)
 	if err != nil {
@@ -44,6 +36,14 @@ func (mem *Memory) LoadRom(filePath string) error {
 	}
 
 	return nil
+}
+
+type OutOfBoundsError struct {
+	Address uint16
+}
+
+func (err OutOfBoundsError) Error() string {
+	return fmt.Sprintf("could not access memory contents at address %d (max %d)", err.Address, MemoryCapacity-InstBytes)
 }
 
 func (mem *Memory) GetInstBytes(reg *Registers) (byte, byte, error) {

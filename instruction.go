@@ -1,7 +1,5 @@
 package main
 
-type Instruction uint16
-
 const (
 	InstBits      = 16
 	BitsPerByte   = 8
@@ -10,7 +8,7 @@ const (
 	InstNibbles   = InstBytes * 2
 )
 
-type InstClass uint64
+type Instruction uint16
 
 func InstFromBytes(even, odd byte) Instruction {
 	hiHalf := uint16(even) << uint16(BitsPerByte)
@@ -29,4 +27,12 @@ func (inst Instruction) GetHexDigits() [InstNibbles]uint {
 	}
 
 	return digits
+}
+
+// func (inst Instruction) MatchesOpcode(code Opcode) bool {
+// 	return uint16(inst)&code.Mask == code.Code
+// }
+
+func (inst Instruction) ApplyOpcodeMask(mask Mask) uint16 {
+	return uint16(inst) & mask
 }
