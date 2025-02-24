@@ -29,10 +29,12 @@ func (inst Instruction) GetHexDigits() [InstNibbles]uint {
 	return digits
 }
 
-// func (inst Instruction) MatchesOpcode(code Opcode) bool {
-// 	return uint16(inst)&code.Mask == code.Code
-// }
-
-func (inst Instruction) ApplyOpcodeMask(mask Mask) uint16 {
+func (inst Instruction) ApplyOpcodeMask(mask Mask) Opcode {
 	return uint16(inst) & mask
+}
+
+func (inst Instruction) GetAddr() uint16 {
+	// Applying the NOT of the address mask gets the address parameter passed
+	// into the instruction.
+	return uint16(inst) & ^Addr
 }
