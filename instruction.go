@@ -41,6 +41,26 @@ func (inst Instruction) GetAddr() uint16 {
 }
 
 // Gets the register and byte components of a RegByte instruction.
-func (inst Instruction) GetRegByte() (byte, byte) {
+func (inst Instruction) GetRegByte() (uint16, byte) {
+	const RegIdx = 2        // Need two shifts to move Reg to the right.
+	const ByteMask = 0x00FF // Last two digits are the byte argument.
 
+	params := uint16(inst) & ^RegByte
+
+	reg := params >> RegIdx
+	b := byte(params & ByteMask)
+
+	return reg, b
+}
+
+func (inst Instruction) GetTwoReg() (uint16, uint16) {
+	const RegIdxX = 2
+	const RegIdxY = 1
+
+	params := uint16(inst) & ^TwoReg
+
+	regx := params >> RegIdxX
+	regy := params >> RegIdxY
+
+	return regx, regy
 }
