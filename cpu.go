@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"math/rand"
+)
 
 type InstTypeRunner = func(Instruction) (bool, error)
 
@@ -22,64 +25,70 @@ func (sys *System) Execute(inst Instruction) error {
 	return nil
 }
 
-// Exact instructions include CLS, RET
+// Exact instructions include CLS and RET
 func (sys *System) tryRunIfExact(inst Instruction) (bool, error) {
 	exactInst := inst.ApplyOpcodeMask(Exact)
 
-	found := false
 	var err error
 
 	switch exactInst {
-	case CLS:
-		sys.CLS()
-		found = true
-	case RET:
-		err = sys.RET()
-		found = true
+	case CLS: // Clear the display.
+		// TODO: When display is implemented.
+	case RET: // Return from a subroutine.
+		err = sys.stack.Pop(&sys.registers)
+	default:
+		return false, err
 	}
 
-	return found, err
+	return true, err
 }
 
+// Address instructions include JP and CALL
 func (sys *System) tryRunIfAddr(inst Instruction) (bool, error) {
 	addrInst := inst.ApplyOpcodeMask(Addr)
 	address := inst.GetAddr()
 
-	found := false
 	var err error
 
 	switch addrInst {
-	case JP:
-		sys.JP(address)
-		found = true
-	case CALL:
-		err = sys.CALL(address)
-		found = true
+	case JP: // Jump to location at address.
+		sys.registers.PC = address
+	case CALL: // Call subroutine at address.
+		err = sys.stack.Push(&sys.registers)
+		sys.registers.PC = address
+	default:
+		return false, err
 	}
 
-	return found, err
+	return true, err
 }
 
-// Clear the display.
-func (sys *System) CLS() {
-	// TODO: Must clear the system's display.
-}
+// RegByte instructions include:
+// SE, SNE, LD, ADD, RND
+func (sys *System) tryRunIfRegByte(inst Instruction) (bool, error) {
+	regByteInst := inst.ApplyOpcodeMask(RegByte)
+	reg, b := inst.GetRegByte()
 
-// The interpreter sets the program counter to the address at the top of the
-// stack, then subtracts 1 from the stack pointer.
-func (sys *System) RET() error {
-	err := sys.stack.Pop(&sys.registers)
-	return err
-}
+	var err error
 
-// Jump to location nnn.
-func (sys *System) JP(nnn uint16) {
-	sys.registers.PC = nnn
-}
+	switch regByteInst {
+	case SE: // Skip next instruction if Vx == byte.
+		if sys.registers.V[reg] == b {
+			sys.registers.IncProgramCounter()
+		}
+	case SNE: // Skip next instruction if Vx != byte.
+		if sys.registers.V[reg] != b {
+			sys.registers.IncProgramCounter()
+		}
+	case LD: // Set Vx = byte.
+		sys.registers.V[reg] = b
+	case ADD: // Set Vx = Vx + byte.
+		sys.registers.V[reg] += b
+	case RND: // Set Vx = random byte AND passed byte.
+		sys.registers.V[reg] = byte(rand.Intn(256)) & b
+	default:
+		return false, err
+	}
 
-// Call subroutine at nnn.
-func (sys *System) CALL(nnn uint16) error {
-	err := sys.stack.Push(&sys.registers)
-	sys.registers.PC = nnn
-	return err
+	return true, err
 }

@@ -33,8 +33,14 @@ func (inst Instruction) ApplyOpcodeMask(mask Mask) Opcode {
 	return uint16(inst) & mask
 }
 
+// Gets the address component of an Address instruction.
 func (inst Instruction) GetAddr() uint16 {
 	// Applying the NOT of the address mask gets the address parameter passed
 	// into the instruction.
 	return uint16(inst) & ^Addr
+}
+
+// Gets the register and byte components of a RegByte instruction.
+func (inst Instruction) GetRegByte() (byte, byte) {
+
 }
