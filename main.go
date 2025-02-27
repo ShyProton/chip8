@@ -9,24 +9,37 @@ type System struct {
 	memory    Memory
 	registers Registers
 	stack     CallStack
-	opcodes   map[OpcodeName]Opcode
+	display   Display
 	// TODO: Display - for handing the visual output.
 	// TODO: CPU - for handling the decoding and execution of instructions.
 }
 
+type InstExecutionError struct {
+	inst Instruction
+	err  error
+}
+
+func (err InstExecutionError) Error() string {
+	return fmt.Sprintf("error encountered trying to execute instruction '%04X':\n%v", err.inst, err.err)
+}
+
 func (sys *System) Run() error {
+	err := sys.display.Init()
+	if err != nil {
+		return err
+	}
+	defer sys.display.Finish()
+
 	sys.registers.PC = RomStart // Starts at address 512.
-	sys.opcodes = GetOpcodeRef()
 
-	for ; ; sys.registers.PC += 2 {
-		even, odd, err := sys.memory.GetInstBytes(&sys.registers)
-		if err != nil {
-			return err
-		}
-
+	for ; ; sys.registers.IncProgramCounter() {
+		even, odd := sys.memory.GetInstBytes(&sys.registers)
 		inst := InstFromBytes(even, odd)
 
-		sys.Execute(inst)
+		err = sys.Execute(inst)
+		if err != nil {
+			return InstExecutionError{inst, err}
+		}
 
 		fmt.Printf("Dual-Byte: %X\n", inst)
 	}

@@ -1,8 +1,10 @@
 package main
 
+const RegisterCount = 16
+
 type Registers struct {
-	V [16]byte // 16 General-purpose 8-bit registers.
-	I byte     // Generally used to store memory addresses.
+	V [RegisterCount]byte // 16 General-purpose 8-bit registers.
+	I uint16              // Generally used to store memory addresses.
 
 	// Pseudo-registers, not accessible from Chip-8 programs.
 	// These should prooobably go somewhere else, belonging to each subsystem.
