@@ -17,18 +17,6 @@ func InstFromBytes(even, odd byte) Instruction {
 	return Instruction(hiHalf | loHalf)
 }
 
-func (inst Instruction) GetHexDigits() [InstNibbles]uint {
-	const FirstHexMask = 0xF
-
-	var digits [InstNibbles]uint
-
-	for i := range InstNibbles {
-		digits[i] = uint(inst) >> (BitsPerNibble * i) & FirstHexMask
-	}
-
-	return digits
-}
-
 func (inst Instruction) ApplyOpcodeMask(mask Mask) Opcode {
 	return uint16(inst) & mask
 }
@@ -55,17 +43,18 @@ func (inst Instruction) GetRegByte() (uint16, byte) {
 	return reg, b
 }
 
-func (inst Instruction) GetTwoReg() (uint16, uint16) {
+func (inst Instruction) GetTwoRegNib() (uint16, uint16, uint16) {
 	const (
 		RegIdxX       = 2      // Need two shifts to move RegX to the right.
 		RegIdxY       = 1      // Need one shift to move RegY to the right.
 		LastDigitMask = 0x000F // Need the last digit to isolate RegY from RegX.
 	)
 
-	params := uint16(inst) & ^TwoReg
+	params := uint16(inst) & ^TwoRegNib
 
 	regx := params >> (RegIdxX * BitsPerNibble)
 	regy := params >> (RegIdxY * BitsPerNibble) & LastDigitMask
+	nib := params & LastDigitMask
 
-	return regx, regy
+	return regx, regy, nib
 }

@@ -17,8 +17,15 @@ type Registers struct {
 func (reg *Registers) IncProgramCounter() {
 	reg.PC += 2
 
-	// NOTE: Assuming the program counter should wrap on overflow.
-	if reg.PC >= MemoryCapacity {
-		reg.PC -= MemoryCapacity
+	if reg.PC >= MemoryCapacity-1 {
+		reg.PC -= MemoryCapacity - 1
 	}
+}
+
+func (reg *Registers) DecProgramCounter() {
+	if reg.PC == 0 {
+		reg.PC = MemoryCapacity
+	}
+
+	reg.PC -= 2
 }

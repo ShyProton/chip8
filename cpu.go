@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 	"math/rand/v2"
 )
@@ -14,7 +13,8 @@ func (sys *System) Execute(inst Instruction) error {
 		sys.tryRunIfAddr,
 		sys.tryRunIfRegByte,
 		sys.tryRunIfTwoReg,
-		// sys.tryRunIfReg,
+		sys.tryRunIfReg,
+		sys.tryRunIfTwoRegNib,
 	}
 
 	for _, tryRunInstruction := range instructionTypeRunners {
@@ -28,8 +28,6 @@ func (sys *System) Execute(inst Instruction) error {
 		}
 	}
 
-	fmt.Printf("Instruction %X not a valid command, ignoring...\n", inst)
-
 	return nil
 }
 
@@ -41,11 +39,11 @@ func (sys *System) tryRunIfExact(inst Instruction) (bool, error) {
 
 	switch exactInst {
 	case CLS: // Clear the display.
-		sys.display.Buf.Clear()
+		sys.io.graphics.Buf.Clear()
 	case RET: // Return from a subroutine.
 		err = sys.stack.Pop(&sys.registers)
 	default:
-		return false, err
+		return false, nil
 	}
 
 	return true, err
@@ -61,11 +59,17 @@ func (sys *System) tryRunIfAddr(inst Instruction) (bool, error) {
 	switch addrInst {
 	case JP: // Jump to location at address.
 		sys.registers.PC = address
+		sys.registers.DecProgramCounter()
 	case CALL: // Call subroutine at address.
 		err = sys.stack.Push(&sys.registers)
 		sys.registers.PC = address
+	case LDI: // Set I = nnn.
+		sys.registers.I = address
+	case JPV: // Jump to location nnn + V0.
+		sys.registers.PC = address + uint16(sys.registers.V[0])
+		sys.registers.DecProgramCounter()
 	default:
-		return false, err
+		return false, nil
 	}
 
 	return true, err
@@ -95,7 +99,7 @@ func (sys *System) tryRunIfRegByte(inst Instruction) (bool, error) {
 	case RND: // Set Vx = random byte AND passed byte.
 		sys.registers.V[x] = byte(rand.IntN(256)) & b
 	default:
-		return false, err
+		return false, nil
 	}
 
 	return true, err
@@ -105,7 +109,7 @@ func (sys *System) tryRunIfRegByte(inst Instruction) (bool, error) {
 // RegLD, RegOR, RegAND, RegXOR, RegADD, RegSUB, RegSHR, RegSUBN, RegSHL, RegSNE.
 func (sys *System) tryRunIfTwoReg(inst Instruction) (bool, error) {
 	twoRegInst := inst.ApplyOpcodeMask(TwoReg)
-	x, y := inst.GetTwoReg()
+	x, y, _ := inst.GetTwoRegNib()
 
 	switch twoRegInst {
 	case RegLD: // Set Vx = Vy.
@@ -168,7 +172,7 @@ func (sys *System) tryRunIfReg(inst Instruction) (bool, error) {
 	switch regInst {
 	case SKP: // TODO: Skip next instruction if the key with the value of Vx is pressed.
 	case SKPNP: // TODO: Skip next instruction if the key with the value of Vx is not pressed.
-	case LDDT: // TODO: Set Vx = delay timer value.
+	case LDDT: // Set Vx = delay timer value.
 		sys.registers.V[x] = sys.registers.DT
 	case LDK: // Wait for a key press, store the value of the key in Vx.
 	case DTLD: // Set delay timer = Vx.
@@ -177,19 +181,53 @@ func (sys *System) tryRunIfReg(inst Instruction) (bool, error) {
 		sys.registers.ST = sys.registers.V[x]
 	case ADDI: // Set I = I + Vx.
 		sys.registers.I += uint16(sys.registers.V[x])
-	case LDF: // TODO: Set I = location of sprite for digit Vx.
+	case LDF: // Set I = location of sprite for digit Vx.
+		fontIdx := int(sys.registers.V[x]) * FontCharRows
+		sys.registers.I = uint16(sys.memory[fontIdx])
 	case LDB: // TODO: Store BCD representation of Vx in memory locations I, I+1, and I+2.
 	case LDV: // Store registers V0 through Vx in memory starting at location I.
 		for i := range x + 1 {
-			sys.memory[sys.registers.I+i] = sys.registers.V[i]
+			sys.memory[sys.registers.I+i] = sys.registers.V[i] // NOTE: Possible failure point when accessing memory.
 		}
 	case VLD: // Read registers V0 through Vx from memory starting at location I.
 		for i := range x + 1 {
-			sys.registers.V[i] = sys.memory[sys.registers.I+i]
+			sys.registers.V[i] = sys.memory[sys.registers.I+i] // NOTE: Possible failure point when accessing memory.
 		}
 	default:
-		return false, err
+		return false, nil
 	}
 
 	return true, err
+}
+
+// DRW is the only TwoRegNib instruction.
+func (sys *System) tryRunIfTwoRegNib(inst Instruction) (bool, error) {
+	twoRegNibInst := inst.ApplyOpcodeMask(TwoRegNib)
+	x, y, n := inst.GetTwoRegNib()
+
+	if twoRegNibInst != DRW {
+		return false, nil
+	}
+
+	drawX, drawY := int(sys.registers.V[x]), int(sys.registers.V[y])
+	erasure := false
+
+	for i := range int(n) {
+		sprRow, err := sys.memory.ByteAt(int(sys.registers.I) + i)
+		if err != nil {
+			return true, err
+		}
+
+		erasure = erasure || sys.io.DrawRow(drawX, drawY+i, *sprRow)
+	}
+
+	if erasure {
+		sys.registers.V[0xF] = 1
+	} else {
+		sys.registers.V[0xF] = 0
+	}
+
+	sys.io.graphics.Show()
+
+	return true, nil
 }

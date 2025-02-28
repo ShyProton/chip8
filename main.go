@@ -9,9 +9,7 @@ type System struct {
 	memory    Memory
 	registers Registers
 	stack     CallStack
-	display   Display
-	// TODO: Display - for handing the visual output.
-	// TODO: CPU - for handling the decoding and execution of instructions.
+	io        IO
 }
 
 type InstExecutionError struct {
@@ -24,36 +22,39 @@ func (err InstExecutionError) Error() string {
 }
 
 func (sys *System) Run() error {
-	err := sys.display.Init()
-	if err != nil {
-		return err
-	}
-	defer sys.display.Finish()
-
 	sys.registers.PC = RomStart // Starts at address 512.
 
 	for ; ; sys.registers.IncProgramCounter() {
 		even, odd := sys.memory.GetInstBytes(&sys.registers)
 		inst := InstFromBytes(even, odd)
 
-		err = sys.Execute(inst)
-		if err != nil {
+		if err := sys.Execute(inst); err != nil {
 			return InstExecutionError{inst, err}
 		}
-
-		fmt.Printf("Dual-Byte: %X\n", inst)
 	}
 }
 
 func main() {
 	var system System
 
-	err := system.memory.LoadRom("rom.ch8")
+	system.memory.LoadFont()
+
+	romName := "2-ibm-logo.ch8"
+
+	err := system.memory.LoadRom(romName)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 
 		return
 	}
+
+	err = system.io.Init(romName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+
+		return
+	}
+	defer system.io.graphics.Finish()
 
 	err = system.Run()
 	if err != nil {
