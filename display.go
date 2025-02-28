@@ -14,7 +14,8 @@ const (
 )
 
 type IO struct {
-	graphics *tcg.Tcg
+	graphics         *tcg.Tcg
+	originX, originY int
 }
 
 func (io *IO) Init(romName string) error {
@@ -27,19 +28,8 @@ func (io *IO) Init(romName string) error {
 
 	io.graphics = graphics
 
-	pattern := tcg.MustNewBufferFromStrings([]string{
-		"**  **",
-		" **** ",
-		"*    *",
-		" **** ",
-		"**  **",
-		"  **  ",
-	})
-
-	io.graphics.Buf.Fill(0, 0, tcg.WithPattern(pattern))
-	io.graphics.Show()
-
-	originX, originY := io.getOriginChars()
+	io.initPattern()
+	io.setOriginChars()
 
 	err = io.graphics.SetClipCenter(DisplayWidth, DisplayHeight)
 	if err != nil {
@@ -50,15 +40,33 @@ func (io *IO) Init(romName string) error {
 
 	io.graphics.Buf.Rect(0, 0, io.graphics.Width, io.graphics.Height, tcg.White)
 
-	title := centerStringToDisplay("CHIP-8")
-	subTitle := centerStringToDisplay(romName)
-
-	io.graphics.PrintStr(originX, originY-TitleOffset, title)
-	io.graphics.PrintStr(originX, originY-TitleOffset+1, subTitle)
-
-	io.graphics.Show()
+	io.initTitles("CHIP-8", romName)
 
 	return nil
+}
+
+func (io *IO) initPattern() {
+	pattern := tcg.MustNewBufferFromStrings([]string{
+		"**  **",
+		" **** ",
+		"*    *",
+		" **** ",
+		"**  **",
+		" **** ",
+	})
+
+	io.graphics.Buf.Fill(0, 0, tcg.WithPattern(pattern))
+	io.graphics.Show()
+}
+
+func (io *IO) initTitles(title, subtitle string) {
+	centeredTitle := centerStringToDisplay(title)
+	centeredSubtitle := centerStringToDisplay(subtitle)
+
+	io.graphics.PrintStr(io.originX, io.originY-TitleOffset, centeredTitle)
+	io.graphics.PrintStr(io.originX, io.originY-TitleOffset+1, centeredSubtitle)
+
+	io.graphics.Show()
 }
 
 func centerStringToDisplay(str string) string {
@@ -67,14 +75,13 @@ func centerStringToDisplay(str string) string {
 	return fmt.Sprintf("%*s%s%*s", padding, "", str, padding, "")
 }
 
-func (io *IO) getOriginChars() (int, int) {
-	screenWidthChars := io.graphics.Width / tcg.Mode1x2.Width()
-	screenHeightChars := io.graphics.Height / tcg.Mode1x2.Height()
+func (io *IO) setOriginChars() {
+	screenWidthChars, screenHeightChars := io.graphics.ScreenSize()
 
 	originCharsX := (screenWidthChars - DisplayWidth) / 2
 	originCharsY := (screenHeightChars - DisplayHeight) / 2
 
-	return originCharsX, originCharsY
+	io.originX, io.originY = originCharsX, originCharsY
 }
 
 func getDrawXY(x, y int) (int, int) {
