@@ -59,7 +59,7 @@ func (sys *System) tryRunIfAddr(inst Instruction) (bool, error) {
 	switch addrInst {
 	case JP: // Jump to location at address.
 		sys.registers.PC = address
-		sys.registers.DecProgramCounter()
+		sys.memory.DecProgramCounter()
 	case CALL: // Call subroutine at address.
 		err = sys.stack.Push(&sys.registers)
 		sys.registers.PC = address
@@ -67,7 +67,7 @@ func (sys *System) tryRunIfAddr(inst Instruction) (bool, error) {
 		sys.registers.I = address
 	case JPV: // Jump to location nnn + V0.
 		sys.registers.PC = address + uint16(sys.registers.V[0])
-		sys.registers.DecProgramCounter()
+		sys.memory.DecProgramCounter()
 	default:
 		return false, nil
 	}
@@ -86,11 +86,11 @@ func (sys *System) tryRunIfRegByte(inst Instruction) (bool, error) {
 	switch regByteInst {
 	case SE: // Skip next instruction if Vx == byte.
 		if sys.registers.V[x] == b {
-			sys.registers.IncProgramCounter()
+			sys.memory.IncProgramCounter()
 		}
 	case SNE: // Skip next instruction if Vx != byte.
 		if sys.registers.V[x] != b {
-			sys.registers.IncProgramCounter()
+			sys.memory.IncProgramCounter()
 		}
 	case LD: // Set Vx = byte.
 		sys.registers.V[x] = b
@@ -152,7 +152,7 @@ func (sys *System) tryRunIfTwoReg(inst Instruction) (bool, error) {
 		sys.registers.V[x] *= 2
 	case RegSNE: // Skip next instruction if Vx != Vy.
 		if sys.registers.V[x] != sys.registers.V[y] {
-			sys.registers.IncProgramCounter()
+			sys.memory.IncProgramCounter()
 		}
 	default:
 		return false, nil
@@ -182,8 +182,7 @@ func (sys *System) tryRunIfReg(inst Instruction) (bool, error) {
 	case ADDI: // Set I = I + Vx.
 		sys.registers.I += uint16(sys.registers.V[x])
 	case LDF: // Set I = location of sprite for digit Vx.
-		fontIdx := int(sys.registers.V[x]) * FontCharRows
-		sys.registers.I = uint16(sys.memory[fontIdx])
+		sys.registers.I, err = sys.memory.FontAddr(sys.registers.V[x])
 	case LDB: // TODO: Store BCD representation of Vx in memory locations I, I+1, and I+2.
 	case LDV: // Store registers V0 through Vx in memory starting at location I.
 		for i := range x + 1 {

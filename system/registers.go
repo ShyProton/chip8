@@ -13,19 +13,3 @@ type Registers struct {
 	ST byte   // Sound Timer.
 	DT byte   // Delay Timer.
 }
-
-func (reg *Registers) IncProgramCounter() {
-	reg.PC += 2
-
-	if reg.PC >= MemoryCapacity-1 {
-		reg.PC -= MemoryCapacity - 1
-	}
-}
-
-func (reg *Registers) DecProgramCounter() {
-	if reg.PC == 0 {
-		reg.PC = MemoryCapacity
-	}
-
-	reg.PC -= 2
-}

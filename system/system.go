@@ -1,12 +1,25 @@
 package system
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/ShyProton/chip8/system/memory"
+)
 
 type System struct {
-	memory    Memory
+	memory    memory.Memory
 	registers Registers
 	stack     CallStack
 	io        IO
+}
+
+type instExecutionError struct {
+	inst Instruction
+	err  error
+}
+
+func (err instExecutionError) Error() string {
+	return fmt.Sprintf("error encountered trying to execute instruction '%04X':\n%v", err.inst, err.err)
 }
 
 func NewSystem(romPath string) (*System, error) {
@@ -14,37 +27,24 @@ func NewSystem(romPath string) (*System, error) {
 
 	system.memory.LoadFont()
 
-	err := system.memory.LoadRom(romPath)
-	if err != nil {
+	if err := system.memory.LoadRom(romPath); err != nil {
 		return nil, fmt.Errorf("error while loading rom into memory: %w", err)
 	}
 
-	err = system.io.Init(romPath)
-	if err != nil {
+	if err := system.io.Init(romPath); err != nil {
 		return nil, fmt.Errorf("error while initializing the system graphics: %w", err)
 	}
 
 	return system, nil
 }
 
-type InstExecutionError struct {
-	inst Instruction
-	err  error
-}
-
-func (err InstExecutionError) Error() string {
-	return fmt.Sprintf("error encountered trying to execute instruction '%04X':\n%v", err.inst, err.err)
-}
-
 func (sys *System) Run() error {
-	sys.registers.PC = RomStart // Starts at address 512.
-
-	for ; ; sys.registers.IncProgramCounter() {
-		even, odd := sys.memory.GetInstBytes(&sys.registers)
+	for ; ; sys.memory.IncProgramCounter() {
+		even, odd := sys.memory.GetInstBytes()
 		inst := InstFromBytes(even, odd)
 
 		if err := sys.Execute(inst); err != nil {
-			return InstExecutionError{inst, err}
+			return instExecutionError{inst, err}
 		}
 	}
 }
