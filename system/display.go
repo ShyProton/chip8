@@ -1,4 +1,4 @@
-package main
+package system
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ type IO struct {
 	originX, originY int
 }
 
-func (io *IO) Init(romName string) error {
+func (io *IO) Init(romPath string) error {
 	mode := tcg.Mode1x2
 
 	graphics, err := tcg.New(mode)
@@ -40,7 +40,7 @@ func (io *IO) Init(romName string) error {
 
 	io.graphics.Buf.Rect(0, 0, io.graphics.Width, io.graphics.Height, tcg.White)
 
-	io.initTitles("CHIP-8", romName)
+	io.initTitles("CHIP-8", romPath)
 
 	return nil
 }
@@ -52,7 +52,7 @@ func (io *IO) initPattern() {
 		"*    *",
 		" **** ",
 		"**  **",
-		" **** ",
+		"  **  ",
 	})
 
 	io.graphics.Buf.Fill(0, 0, tcg.WithPattern(pattern))
@@ -71,8 +71,9 @@ func (io *IO) initTitles(title, subtitle string) {
 
 func centerStringToDisplay(str string) string {
 	padding := (DisplayWidth - len(str)) / 2
+	oddOffset := len(str) % 2
 
-	return fmt.Sprintf("%*s%s%*s", padding, "", str, padding, "")
+	return fmt.Sprintf("%*s%s%*s", padding, "", str, padding+oddOffset, "")
 }
 
 func (io *IO) setOriginChars() {

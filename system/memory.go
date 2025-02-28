@@ -1,4 +1,4 @@
-package main
+package system
 
 import (
 	"fmt"
@@ -26,8 +26,8 @@ func (err RomTooLargeError) Error() string {
 	return fmt.Sprintf("rom file size %d is too large (max %d)", err.RomSize, RomCapacity)
 }
 
-func (mem *Memory) LoadRom(filePath string) error {
-	rom, err := os.ReadFile(filePath)
+func (mem *Memory) LoadRom(romPath string) error {
+	rom, err := os.ReadFile(romPath)
 	if err != nil {
 		return fmt.Errorf("could not read rom file: %w", err)
 	}
