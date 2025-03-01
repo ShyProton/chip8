@@ -9,7 +9,6 @@ import (
 type System struct {
 	memory    memory.Memory
 	registers Registers
-	stack     CallStack
 	io        IO
 }
 

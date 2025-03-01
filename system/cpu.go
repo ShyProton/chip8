@@ -41,13 +41,7 @@ func (sys *System) tryRunIfExact(inst Instruction) (bool, error) {
 	case CLS: // Clear the display.
 		sys.io.graphics.Buf.Clear()
 	case RET: // Return from a subroutine.
-		var pc uint16
-		pc, err = sys.stack.Pop()
-		if err != nil {
-			break
-		}
-
-		err = sys.memory.QueueNextPC(pc)
+		err = sys.memory.PopCallStack()
 	default:
 		return false, nil
 	}
@@ -66,7 +60,7 @@ func (sys *System) tryRunIfAddr(inst Instruction) (bool, error) {
 	case JP: // Jump to location at address.
 		err = sys.memory.QueueNextPC(address)
 	case CALL: // Call subroutine at address.
-		err = sys.stack.Push(sys.memory.GetPC() + 2)
+		err = sys.memory.PushCallStack()
 		if err != nil {
 			break
 		}

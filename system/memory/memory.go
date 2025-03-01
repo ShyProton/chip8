@@ -1,17 +1,14 @@
 package memory
 
-// TODO: Have memory loading/accessing functions for the LDV and VLD instructions, which
-// read and write a certain number of registers to and from memory.
-
 const (
 	memoryCapacity = 4_096 // 4KB of memory.
 	romStart       = 512   // Starting address of Chip-8 programs.
 )
 
 type Memory struct {
-	ram    [memoryCapacity]byte
-	pc     uint16
-	nextpc uint16
+	ram        [memoryCapacity]byte // System's Random Access Memory.
+	cstack     callStack            // Routine call stack for storing addresses to return to.
+	pc, nextpc uint16               // Program Counter indexes memory contents to get instructions.
 }
 
 func (mem *Memory) QueueNextPC(nextpc uint16) error {
