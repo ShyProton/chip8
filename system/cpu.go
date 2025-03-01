@@ -189,7 +189,12 @@ func (sys *System) tryRunIfReg(inst Instruction) (bool, error) {
 		sys.registers.I += uint16(sys.registers.V[x])
 	case LDF: // Set I = location of sprite for digit Vx.
 		sys.registers.I, err = sys.memory.FontAddr(sys.registers.V[x])
-	case LDB: // TODO: Store BCD representation of Vx in memory locations I, I+1, and I+2.
+	case LDB: // Store BCD representation of Vx in memory locations I, I+1, and I+2.
+		hundreds := sys.registers.V[x] / 100
+		tens := (sys.registers.V[x] / 10) % 10
+		ones := sys.registers.V[x] % 10
+
+		err = sys.memory.LoadFromBytes(int(sys.registers.I), []byte{hundreds, tens, ones})
 	case LDV: // Store registers V0 through Vx in memory starting at location I.
 		err = sys.memory.LoadFromBytes(int(sys.registers.I), sys.registers.V[:x+1])
 	case VLD: // Read registers V0 through Vx from memory starting at location I.
