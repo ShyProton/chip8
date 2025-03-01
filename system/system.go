@@ -39,7 +39,7 @@ func NewSystem(romPath string) (*System, error) {
 }
 
 func (sys *System) Run() error {
-	for ; ; sys.memory.IncProgramCounter() {
+	for ; ; sys.memory.IncPC() {
 		even, odd := sys.memory.GetInstBytes()
 		inst := InstFromBytes(even, odd)
 

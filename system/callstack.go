@@ -5,31 +5,33 @@ import (
 	"fmt"
 )
 
-const StackSize = 16
+const stackSize = 16
 
-type CallStack [StackSize]uint16
+type CallStack struct {
+	stack [stackSize]uint16
+	sp    byte
+}
 
-var ErrStackOverflow = fmt.Errorf("exceeded %d nested calls", StackSize)
-var ErrStackUnderflow = errors.New("cannot pop from empty stack")
+var errStackOverflow = fmt.Errorf("exceeded %d nested calls", stackSize)
+var errStackUnderflow = errors.New("cannot pop from empty stack")
 
-func (stack *CallStack) Push(reg *Registers) error {
-	if reg.SP >= StackSize {
-		return ErrStackOverflow
+func (callstack *CallStack) Push(pc uint16) error {
+	if callstack.sp >= stackSize {
+		return errStackOverflow
 	}
 
-	stack[reg.SP] = reg.PC
-	reg.SP++
+	callstack.stack[callstack.sp] = pc
+	callstack.sp++
 
 	return nil
 }
 
-func (stack *CallStack) Pop(reg *Registers) error {
-	if reg.SP <= 0 {
-		return ErrStackUnderflow
+func (callstack *CallStack) Pop() (uint16, error) {
+	if callstack.sp <= 0 {
+		return 0, errStackUnderflow
 	}
 
-	reg.SP--
-	reg.PC = stack[reg.SP]
+	callstack.sp--
 
-	return nil
+	return callstack.stack[callstack.sp], nil
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	romPath := "roms/1-chip8-logo.ch8"
+	romPath := "roms/2-ibm-logo.ch8"
 
 	sys, err := system.NewSystem(romPath)
 	if err != nil {

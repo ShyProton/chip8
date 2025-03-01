@@ -41,7 +41,13 @@ func (sys *System) tryRunIfExact(inst Instruction) (bool, error) {
 	case CLS: // Clear the display.
 		sys.io.graphics.Buf.Clear()
 	case RET: // Return from a subroutine.
-		err = sys.stack.Pop(&sys.registers)
+		var pc uint16
+		pc, err = sys.stack.Pop()
+		if err != nil {
+			break
+		}
+
+		err = sys.memory.QueueNextPC(pc)
 	default:
 		return false, nil
 	}
@@ -58,16 +64,18 @@ func (sys *System) tryRunIfAddr(inst Instruction) (bool, error) {
 
 	switch addrInst {
 	case JP: // Jump to location at address.
-		sys.registers.PC = address
-		sys.memory.DecProgramCounter()
+		err = sys.memory.QueueNextPC(address)
 	case CALL: // Call subroutine at address.
-		err = sys.stack.Push(&sys.registers)
-		sys.registers.PC = address
+		err = sys.stack.Push(sys.memory.GetPC())
+		if err != nil {
+			break
+		}
+
+		err = sys.memory.QueueNextPC(address)
 	case LDI: // Set I = nnn.
 		sys.registers.I = address
 	case JPV: // Jump to location nnn + V0.
-		sys.registers.PC = address + uint16(sys.registers.V[0])
-		sys.memory.DecProgramCounter()
+		err = sys.memory.QueueNextPC(address + uint16(sys.registers.V[0]))
 	default:
 		return false, nil
 	}
@@ -86,11 +94,11 @@ func (sys *System) tryRunIfRegByte(inst Instruction) (bool, error) {
 	switch regByteInst {
 	case SE: // Skip next instruction if Vx == byte.
 		if sys.registers.V[x] == b {
-			sys.memory.IncProgramCounter()
+			sys.memory.IncPC()
 		}
 	case SNE: // Skip next instruction if Vx != byte.
 		if sys.registers.V[x] != b {
-			sys.memory.IncProgramCounter()
+			sys.memory.IncPC()
 		}
 	case LD: // Set Vx = byte.
 		sys.registers.V[x] = b
@@ -152,7 +160,7 @@ func (sys *System) tryRunIfTwoReg(inst Instruction) (bool, error) {
 		sys.registers.V[x] *= 2
 	case RegSNE: // Skip next instruction if Vx != Vy.
 		if sys.registers.V[x] != sys.registers.V[y] {
-			sys.memory.IncProgramCounter()
+			sys.memory.IncPC()
 		}
 	default:
 		return false, nil
@@ -185,13 +193,13 @@ func (sys *System) tryRunIfReg(inst Instruction) (bool, error) {
 		sys.registers.I, err = sys.memory.FontAddr(sys.registers.V[x])
 	case LDB: // TODO: Store BCD representation of Vx in memory locations I, I+1, and I+2.
 	case LDV: // Store registers V0 through Vx in memory starting at location I.
-		for i := range x + 1 {
-			sys.memory[sys.registers.I+i] = sys.registers.V[i] // NOTE: Possible failure point when accessing memory.
-		}
+		// for i := range x + 1 {
+		// 	sys.memory[sys.registers.I+i] = sys.registers.V[i] // NOTE: Possible failure point when accessing memory.
+		// }
 	case VLD: // Read registers V0 through Vx from memory starting at location I.
-		for i := range x + 1 {
-			sys.registers.V[i] = sys.memory[sys.registers.I+i] // NOTE: Possible failure point when accessing memory.
-		}
+		// for i := range x + 1 {
+		// 	sys.registers.V[i] = sys.memory[sys.registers.I+i] // NOTE: Possible failure point when accessing memory.
+		// }
 	default:
 		return false, nil
 	}
@@ -212,7 +220,7 @@ func (sys *System) tryRunIfTwoRegNib(inst Instruction) (bool, error) {
 	erasure := false
 
 	for i := range int(n) {
-		sprRow, err := sys.memory.ByteAt(int(sys.registers.I) + i)
+		sprRow, err := sys.memory.ByteAt(sys.registers.I + uint16(i))
 		if err != nil {
 			return true, err
 		}

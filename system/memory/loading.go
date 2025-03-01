@@ -5,9 +5,11 @@ import (
 	"os"
 )
 
+const romCapacity = memoryCapacity - romStart // How large a program can be.
+
 const (
-	fontChars    = 16
-	fontCharRows = 5
+	fontChars    = 16 // Number of font characters within the interpreter.
+	fontCharRows = 5  // How many bytes the characters are composed of.
 )
 
 func (mem *Memory) LoadRom(romPath string) error {
@@ -24,7 +26,8 @@ func (mem *Memory) LoadRom(romPath string) error {
 		mem.ram[i+romStart] = romByte
 	}
 
-	mem.PC = romStart
+	mem.pc = romStart
+	mem.nextpc = mem.pc + 2
 
 	return nil
 }

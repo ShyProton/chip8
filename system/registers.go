@@ -8,8 +8,7 @@ type Registers struct {
 
 	// Pseudo-registers, not accessible from Chip-8 programs.
 	// These should prooobably go somewhere else, belonging to each subsystem.
-	PC uint16 // Program Counter.
-	SP byte   // Stack Pointer.
-	ST byte   // Sound Timer.
-	DT byte   // Delay Timer.
+	SP byte // Stack Pointer.
+	ST byte // Sound Timer.
+	DT byte // Delay Timer.
 }

@@ -11,7 +11,7 @@ func (err romTooLargeError) Error() string {
 }
 
 type outOfBoundsError struct {
-	Address int
+	Address uint16
 }
 
 func (err outOfBoundsError) Error() string {
@@ -24,4 +24,12 @@ type invalidFontAccess struct {
 
 func (err invalidFontAccess) Error() string {
 	return fmt.Sprintf("a font character for value '%X' does not exist, as it is larger than a single digit hexadecimal value (%X)", err.digit, fontChars-1)
+}
+
+type invalidPCAssignment struct {
+	PC uint16
+}
+
+func (err invalidPCAssignment) Error() string {
+	return fmt.Sprintf("could not set program counter to '%d', as it must be less than %d and must be even", err.PC, memoryCapacity-1)
 }
