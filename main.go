@@ -8,12 +8,15 @@ import (
 )
 
 func main() {
-	romPath := "roms/10-chip8-logo.ch8"
+	romPath := "roms/3-corax+.ch8"
 
 	sys, err := system.NewSystem(romPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
+
+		return
 	}
+	defer sys.Exit()
 
 	err = sys.Run()
 	if err != nil {

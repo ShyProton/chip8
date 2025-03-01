@@ -41,7 +41,7 @@ func (sys *System) tryRunIfExact(inst Instruction) (bool, error) {
 	case CLS: // Clear the display.
 		sys.io.graphics.Buf.Clear()
 	case RET: // Return from a subroutine.
-		err = sys.stack.Pop(&sys.registers)
+		err = sys.memory.PopCallStack()
 	default:
 		return false, nil
 	}
@@ -58,16 +58,18 @@ func (sys *System) tryRunIfAddr(inst Instruction) (bool, error) {
 
 	switch addrInst {
 	case JP: // Jump to location at address.
-		sys.registers.PC = address
-		sys.registers.DecProgramCounter()
+		err = sys.memory.QueueNextPC(address)
 	case CALL: // Call subroutine at address.
-		err = sys.stack.Push(&sys.registers)
-		sys.registers.PC = address
+		err = sys.memory.PushCallStack()
+		if err != nil {
+			break
+		}
+
+		err = sys.memory.QueueNextPC(address)
 	case LDI: // Set I = nnn.
 		sys.registers.I = address
 	case JPV: // Jump to location nnn + V0.
-		sys.registers.PC = address + uint16(sys.registers.V[0])
-		sys.registers.DecProgramCounter()
+		err = sys.memory.QueueNextPC(address + uint16(sys.registers.V[0]))
 	default:
 		return false, nil
 	}
@@ -86,11 +88,11 @@ func (sys *System) tryRunIfRegByte(inst Instruction) (bool, error) {
 	switch regByteInst {
 	case SE: // Skip next instruction if Vx == byte.
 		if sys.registers.V[x] == b {
-			sys.registers.IncProgramCounter()
+			sys.memory.IncPC()
 		}
 	case SNE: // Skip next instruction if Vx != byte.
 		if sys.registers.V[x] != b {
-			sys.registers.IncProgramCounter()
+			sys.memory.IncPC()
 		}
 	case LD: // Set Vx = byte.
 		sys.registers.V[x] = b
@@ -150,9 +152,13 @@ func (sys *System) tryRunIfTwoReg(inst Instruction) (bool, error) {
 		}
 
 		sys.registers.V[x] *= 2
+	case RegSE:
+		if sys.registers.V[x] == sys.registers.V[y] {
+			sys.memory.IncPC()
+		}
 	case RegSNE: // Skip next instruction if Vx != Vy.
 		if sys.registers.V[x] != sys.registers.V[y] {
-			sys.registers.IncProgramCounter()
+			sys.memory.IncPC()
 		}
 	default:
 		return false, nil
@@ -182,17 +188,17 @@ func (sys *System) tryRunIfReg(inst Instruction) (bool, error) {
 	case ADDI: // Set I = I + Vx.
 		sys.registers.I += uint16(sys.registers.V[x])
 	case LDF: // Set I = location of sprite for digit Vx.
-		fontIdx := int(sys.registers.V[x]) * FontCharRows
-		sys.registers.I = uint16(sys.memory[fontIdx])
-	case LDB: // TODO: Store BCD representation of Vx in memory locations I, I+1, and I+2.
+		sys.registers.I, err = sys.memory.FontAddr(sys.registers.V[x])
+	case LDB: // Store BCD representation of Vx in memory locations I, I+1, and I+2.
+		hundreds := sys.registers.V[x] / 100
+		tens := (sys.registers.V[x] / 10) % 10
+		ones := sys.registers.V[x] % 10
+
+		err = sys.memory.LoadFromBytes(int(sys.registers.I), []byte{hundreds, tens, ones})
 	case LDV: // Store registers V0 through Vx in memory starting at location I.
-		for i := range x + 1 {
-			sys.memory[sys.registers.I+i] = sys.registers.V[i] // NOTE: Possible failure point when accessing memory.
-		}
+		err = sys.memory.LoadFromBytes(int(sys.registers.I), sys.registers.V[:x+1])
 	case VLD: // Read registers V0 through Vx from memory starting at location I.
-		for i := range x + 1 {
-			sys.registers.V[i] = sys.memory[sys.registers.I+i] // NOTE: Possible failure point when accessing memory.
-		}
+		err = sys.memory.ReadToBytes(int(sys.registers.I), sys.registers.V[:x+1])
 	default:
 		return false, nil
 	}

@@ -1,30 +1,16 @@
-package system
+package memory
 
 import (
 	"fmt"
 	"os"
 )
 
-const (
-	MemoryCapacity = 4_096                     // 4KB of memory.
-	RomStart       = 512                       // Starting address of Chip-8 programs.
-	RomCapacity    = MemoryCapacity - RomStart // How large a program can be.
-)
+const romCapacity = memoryCapacity - romStart // How large a program can be.
 
 const (
-	FontChars    = 16
-	FontCharRows = 5
+	fontChars    = 16 // Number of font characters within the interpreter.
+	fontCharRows = 5  // How many bytes the characters are composed of.
 )
-
-type Memory [MemoryCapacity]byte
-
-type RomTooLargeError struct {
-	RomSize int
-}
-
-func (err RomTooLargeError) Error() string {
-	return fmt.Sprintf("rom file size %d is too large (max %d)", err.RomSize, RomCapacity)
-}
 
 func (mem *Memory) LoadRom(romPath string) error {
 	rom, err := os.ReadFile(romPath)
@@ -32,13 +18,16 @@ func (mem *Memory) LoadRom(romPath string) error {
 		return fmt.Errorf("could not read rom file: %w", err)
 	}
 
-	if len(rom) > RomCapacity {
-		return RomTooLargeError{len(rom)}
+	if len(rom) > romCapacity {
+		return romTooLargeError{len(rom)}
 	}
 
 	for i, romByte := range rom {
-		mem[i+RomStart] = romByte
+		mem.ram[i+romStart] = romByte
 	}
+
+	mem.pc = romStart
+	mem.nextpc = mem.pc + 2
 
 	return nil
 }
@@ -46,7 +35,7 @@ func (mem *Memory) LoadRom(romPath string) error {
 // See http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#font,
 // which outlines the internal font definitions.
 func (mem *Memory) LoadFont() {
-	digits := [FontChars][FontCharRows]byte{
+	digits := [fontChars][fontCharRows]byte{
 		{0xF0, 0x90, 0x90, 0x90, 0xF0}, // Zero.     (0)
 		{0x20, 0x60, 0x20, 0x20, 0x70}, // One.      (1)
 		{0xF0, 0x10, 0xF0, 0x80, 0xF0}, // Two.      (2)
@@ -67,27 +56,21 @@ func (mem *Memory) LoadFont() {
 
 	for i, digit := range digits {
 		for j, row := range digit {
-			mem[i*len(digit)+j] = row
+			mem.ram[i*len(digit)+j] = row
 		}
 	}
 }
 
-func (mem *Memory) GetInstBytes(reg *Registers) (byte, byte) {
-	return mem[reg.PC], mem[reg.PC+1]
-}
-
-type OutOfBoundsError struct {
-	Address int
-}
-
-func (err OutOfBoundsError) Error() string {
-	return fmt.Sprintf("could not access memory contents at address %d (max %d)", err.Address, MemoryCapacity-1)
-}
-
-func (mem *Memory) ByteAt(i int) (*byte, error) {
-	if i >= MemoryCapacity {
-		return nil, OutOfBoundsError{i}
+func (mem *Memory) LoadFromBytes(addr int, bytes []byte) error {
+	// Cannot load registers into memory if we exceed the memory capacity while doing so.
+	largestAddr := addr + len(bytes) - 1
+	if largestAddr >= memoryCapacity {
+		return outOfBoundsError{memoryCapacity}
 	}
 
-	return &mem[i], nil
+	for i, b := range bytes {
+		mem.ram[addr+i] = b
+	}
+
+	return nil
 }
