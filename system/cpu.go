@@ -193,13 +193,9 @@ func (sys *System) tryRunIfReg(inst Instruction) (bool, error) {
 		sys.registers.I, err = sys.memory.FontAddr(sys.registers.V[x])
 	case LDB: // TODO: Store BCD representation of Vx in memory locations I, I+1, and I+2.
 	case LDV: // Store registers V0 through Vx in memory starting at location I.
-		// for i := range x + 1 {
-		// 	sys.memory[sys.registers.I+i] = sys.registers.V[i] // NOTE: Possible failure point when accessing memory.
-		// }
+		err = sys.memory.LoadFromBytes(int(sys.registers.I), sys.registers.V[:x+1])
 	case VLD: // Read registers V0 through Vx from memory starting at location I.
-		// for i := range x + 1 {
-		// 	sys.registers.V[i] = sys.memory[sys.registers.I+i] // NOTE: Possible failure point when accessing memory.
-		// }
+		err = sys.memory.ReadToBytes(int(sys.registers.I), sys.registers.V[:x+1])
 	default:
 		return false, nil
 	}
@@ -220,7 +216,7 @@ func (sys *System) tryRunIfTwoRegNib(inst Instruction) (bool, error) {
 	erasure := false
 
 	for i := range int(n) {
-		sprRow, err := sys.memory.ByteAt(sys.registers.I + uint16(i))
+		sprRow, err := sys.memory.ByteAt(int(sys.registers.I) + i)
 		if err != nil {
 			return true, err
 		}

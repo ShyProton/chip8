@@ -60,3 +60,17 @@ func (mem *Memory) LoadFont() {
 		}
 	}
 }
+
+func (mem *Memory) LoadFromBytes(addr int, bytes []byte) error {
+	// Cannot load registers into memory if we exceed the memory capacity while doing so.
+	largestAddr := addr + len(bytes) - 1
+	if largestAddr >= memoryCapacity {
+		return outOfBoundsError{memoryCapacity}
+	}
+
+	for i, b := range bytes {
+		mem.ram[addr+i] = b
+	}
+
+	return nil
+}

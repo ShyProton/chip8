@@ -16,7 +16,7 @@ type Memory struct {
 
 func (mem *Memory) QueueNextPC(nextpc uint16) error {
 	if nextpc >= memoryCapacity {
-		return outOfBoundsError{nextpc}
+		return invalidPCAssignment{nextpc}
 	}
 
 	if nextpc%2 != 0 {

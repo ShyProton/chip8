@@ -28,11 +28,11 @@ func NewSystem(romPath string) (*System, error) {
 	system.memory.LoadFont()
 
 	if err := system.memory.LoadRom(romPath); err != nil {
-		return nil, fmt.Errorf("error while loading rom into memory: %w", err)
+		return nil, fmt.Errorf("error while loading rom into memory:\n%w", err)
 	}
 
 	if err := system.io.Init(romPath); err != nil {
-		return nil, fmt.Errorf("error while initializing the system graphics: %w", err)
+		return nil, fmt.Errorf("error while initializing the system graphics:\n%w", err)
 	}
 
 	return system, nil

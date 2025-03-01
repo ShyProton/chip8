@@ -11,7 +11,7 @@ func (err romTooLargeError) Error() string {
 }
 
 type outOfBoundsError struct {
-	Address uint16
+	Address int
 }
 
 func (err outOfBoundsError) Error() string {
