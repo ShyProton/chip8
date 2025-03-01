@@ -66,7 +66,7 @@ func (sys *System) tryRunIfAddr(inst Instruction) (bool, error) {
 	case JP: // Jump to location at address.
 		err = sys.memory.QueueNextPC(address)
 	case CALL: // Call subroutine at address.
-		err = sys.stack.Push(sys.memory.GetPC())
+		err = sys.stack.Push(sys.memory.GetPC() + 2)
 		if err != nil {
 			break
 		}
@@ -158,6 +158,10 @@ func (sys *System) tryRunIfTwoReg(inst Instruction) (bool, error) {
 		}
 
 		sys.registers.V[x] *= 2
+	case RegSE:
+		if sys.registers.V[x] == sys.registers.V[y] {
+			sys.memory.IncPC()
+		}
 	case RegSNE: // Skip next instruction if Vx != Vy.
 		if sys.registers.V[x] != sys.registers.V[y] {
 			sys.memory.IncPC()
