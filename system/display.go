@@ -3,6 +3,7 @@ package system
 import (
 	"fmt"
 
+	"github.com/ShyProton/chip8/system/ops"
 	"github.com/msoap/tcg"
 )
 
@@ -102,10 +103,10 @@ func getDrawXY(x, y int) (int, int) {
 func (io *IO) DrawRow(x int, y int, row byte) bool {
 	var erasure bool
 
-	for i := range BitsPerByte {
+	for i := range ops.BitsPerByte {
 		drawX, drawY := getDrawXY(x+i, y)
 
-		newPixel := GetBinaryDigit(row, BitsPerByte-i-1)
+		newPixel := GetBinaryDigit(row, ops.BitsPerByte-i-1)
 		oldPixel := io.graphics.Buf.At(drawX, drawY)
 
 		newPixel ^= oldPixel

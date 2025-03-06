@@ -4,16 +4,28 @@ import (
 	"fmt"
 
 	"github.com/ShyProton/chip8/system/memory"
+	"github.com/ShyProton/chip8/system/ops"
 )
 
+const RegisterCount = 16
+
 type System struct {
-	memory    memory.Memory
-	registers Registers
-	io        IO
+	memory    memory.Memory // System RAM.
+	io        IO            // Handles display output and keyboard input.
+	registers struct {
+		V [RegisterCount]byte // 16 General-purpose 8-bit registers.
+		I uint16              // Generally used to store memory addresses.
+
+		// Pseudo-registers, not accessible from Chip-8 programs.
+		// These should prooobably go somewhere else, belonging to each subsystem.
+		SP byte // Stack Pointer.
+		ST byte // Sound Timer.
+		DT byte // Delay Timer.
+	}
 }
 
 type instExecutionError struct {
-	inst Instruction
+	inst ops.Instruction
 	err  error
 }
 
@@ -40,7 +52,7 @@ func NewSystem(romPath string) (*System, error) {
 func (sys *System) Run() error {
 	for ; ; sys.memory.IncPC() {
 		even, odd := sys.memory.GetInstBytes()
-		inst := InstFromBytes(even, odd)
+		inst := ops.InstFromBytes(even, odd)
 
 		if err := sys.Execute(inst); err != nil {
 			return instExecutionError{inst, err}

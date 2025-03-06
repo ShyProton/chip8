@@ -1,4 +1,4 @@
-package system
+package ops
 
 const (
 	InstBits      = 16
