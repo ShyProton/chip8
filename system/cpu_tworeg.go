@@ -22,35 +22,32 @@ func (sys *System) tryRunIfTwoReg(inst ops.Instruction) (bool, error) {
 	case ops.RegXOR: // Set Vx = Vx XOR Vy.
 		sys.registers.V[x] ^= sys.registers.V[y]
 	case ops.RegADD: // Set Vx = Vx + Vy, set VF = carry.
-		if uint(sys.registers.V[x])+uint(sys.registers.V[y]) > math.MaxUint8 {
-			sys.registers.V[0xF] = 1
-		}
+		vf := getVfFromCond(
+			uint(sys.registers.V[x])+uint(sys.registers.V[y]) > math.MaxUint8)
 
 		sys.registers.V[x] += sys.registers.V[y]
+		sys.registers.V[0xF] = vf
 	case ops.RegSUB: // Set Vx = Vx - Vy, set VF = NOT borrow.
-		if sys.registers.V[x] > sys.registers.V[y] {
-			sys.registers.V[0xF] = 1
-		}
+		vf := getVfFromCond(sys.registers.V[x] >= sys.registers.V[y])
 
 		sys.registers.V[x] -= sys.registers.V[y]
+		sys.registers.V[0xF] = vf
 	case ops.RegSHR: // Set Vx = Vx SHR 1.
-		if sys.registers.V[x]%2 == 1 {
-			sys.registers.V[0xF] = 1
-		}
+		vf := getVfFromCond(sys.registers.V[x]%2 == 1)
 
 		sys.registers.V[x] /= 2
+		sys.registers.V[0xF] = vf
 	case ops.RegSUBN: // Set Vx = Vy - Vx, set VF = NOT borrow.
-		if sys.registers.V[y] > sys.registers.V[x] {
-			sys.registers.V[0xF] = 1
-		}
+		vf := getVfFromCond(sys.registers.V[y] >= sys.registers.V[x])
 
 		sys.registers.V[x] = sys.registers.V[y] - sys.registers.V[x]
+		sys.registers.V[0xF] = vf
 	case ops.RegSHL: // Set Vx = Vx SHL 1.
-		if sys.registers.V[x]%2 == 1 {
-			sys.registers.V[0xF] = 1
-		}
+		mostSignificantBit := GetBinaryDigit(sys.registers.V[x], ops.BitsPerByte-1)
+		vf := getVfFromCond(mostSignificantBit == 1)
 
 		sys.registers.V[x] *= 2
+		sys.registers.V[0xF] = vf
 	case ops.RegSE:
 		if sys.registers.V[x] == sys.registers.V[y] {
 			sys.memory.IncPC()
@@ -64,4 +61,14 @@ func (sys *System) tryRunIfTwoReg(inst ops.Instruction) (bool, error) {
 	}
 
 	return true, nil
+}
+
+func getVfFromCond(cond bool) byte {
+	var vf byte
+
+	if cond {
+		vf = 1
+	}
+
+	return vf
 }
