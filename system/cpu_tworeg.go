@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/ShyProton/chip8/system/ops"
+	"github.com/ShyProton/chip8/system/utils"
 )
 
 // TwoReg instructions include:
@@ -43,7 +44,7 @@ func (sys *System) tryRunIfTwoReg(inst ops.Instruction) (bool, error) {
 		sys.registers.V[x] = sys.registers.V[y] - sys.registers.V[x]
 		sys.registers.V[0xF] = vf
 	case ops.RegSHL: // Set Vx = Vx SHL 1.
-		mostSignificantBit := GetBinaryDigit(sys.registers.V[x], ops.BitsPerByte-1)
+		mostSignificantBit := utils.GetBinaryDigit(sys.registers.V[x], ops.BitsPerByte-1)
 		vf := getVfFromCond(mostSignificantBit == 1)
 
 		sys.registers.V[x] *= 2

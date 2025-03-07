@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ShyProton/chip8/system/ops"
+	"github.com/ShyProton/chip8/system/utils"
 	"github.com/msoap/tcg"
 )
 
@@ -106,7 +107,7 @@ func (io *IO) DrawRow(x int, y int, row byte) bool {
 	for i := range ops.BitsPerByte {
 		drawX, drawY := getDrawXY(x+i, y)
 
-		newPixel := GetBinaryDigit(row, ops.BitsPerByte-i-1)
+		newPixel := utils.GetBinaryDigit(row, ops.BitsPerByte-1-i)
 		oldPixel := io.graphics.Buf.At(drawX, drawY)
 
 		newPixel ^= oldPixel
