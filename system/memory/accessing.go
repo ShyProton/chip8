@@ -14,7 +14,7 @@ func (mem *Memory) ByteAt(i int) (*byte, error) {
 
 func (mem *Memory) FontAddr(digit byte) (uint16, error) {
 	if digit >= fontChars {
-		return 0, invalidFontAccess{digit}
+		return 0, invalidFontAccessError{digit}
 	}
 
 	return uint16(digit) * fontCharRows, nil

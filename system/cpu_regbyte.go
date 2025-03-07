@@ -12,8 +12,6 @@ func (sys *System) tryRunIfRegByte(inst ops.Instruction) (bool, error) {
 	regByteInst := inst.ApplyOpcodeMask(ops.RegByte)
 	x, b := inst.GetRegByte()
 
-	var err error
-
 	switch regByteInst {
 	case ops.SE: // Skip next instruction if Vx == byte.
 		if sys.registers.V[x] == b {
@@ -33,5 +31,5 @@ func (sys *System) tryRunIfRegByte(inst ops.Instruction) (bool, error) {
 		return false, nil
 	}
 
-	return true, err
+	return true, nil
 }

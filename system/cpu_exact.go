@@ -1,6 +1,10 @@
 package system
 
-import "github.com/ShyProton/chip8/system/ops"
+import (
+	"fmt"
+
+	"github.com/ShyProton/chip8/system/ops"
+)
 
 // Exact commands include CLS and RET.
 func (sys *System) tryRunIfExact(inst ops.Instruction) (bool, error) {
@@ -15,6 +19,10 @@ func (sys *System) tryRunIfExact(inst ops.Instruction) (bool, error) {
 		err = sys.memory.PopCallStack()
 	default:
 		return false, nil
+	}
+
+	if err != nil {
+		err = fmt.Errorf("exact instruction error:\n%w", err)
 	}
 
 	return true, err

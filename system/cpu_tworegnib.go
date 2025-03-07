@@ -1,6 +1,10 @@
 package system
 
-import "github.com/ShyProton/chip8/system/ops"
+import (
+	"fmt"
+
+	"github.com/ShyProton/chip8/system/ops"
+)
 
 // DRW is the only TwoRegNib instruction.
 func (sys *System) tryRunIfTwoRegNib(inst ops.Instruction) (bool, error) {
@@ -17,7 +21,7 @@ func (sys *System) tryRunIfTwoRegNib(inst ops.Instruction) (bool, error) {
 	for i := range int(n) {
 		sprRow, err := sys.memory.ByteAt(int(sys.registers.I) + i)
 		if err != nil {
-			return true, err
+			return true, fmt.Errorf("could not fully access sprite for DRW operation:\n%w", err)
 		}
 
 		erasure = erasure || sys.io.DrawRow(drawX, drawY+i, *sprRow)

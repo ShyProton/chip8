@@ -3,6 +3,8 @@ package memory
 import (
 	"fmt"
 	"os"
+
+	"github.com/ShyProton/chip8/system/ops"
 )
 
 const romCapacity = memoryCapacity - romStart // How large a program can be.
@@ -27,7 +29,7 @@ func (mem *Memory) LoadRom(romPath string) error {
 	}
 
 	mem.pc = romStart
-	mem.nextpc = mem.pc + 2
+	mem.nextpc = mem.pc + ops.InstBytes
 
 	return nil
 }

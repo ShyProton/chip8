@@ -1,5 +1,7 @@
 package memory
 
+import "github.com/ShyProton/chip8/system/ops"
+
 const (
 	memoryCapacity = 4_096 // 4KB of memory.
 	romStart       = 512   // Starting address of Chip-8 programs.
@@ -13,11 +15,11 @@ type Memory struct {
 
 func (mem *Memory) QueueNextPC(nextpc uint16) error {
 	if nextpc >= memoryCapacity {
-		return invalidPCAssignment{nextpc}
+		return invalidPCAssignmentError{nextpc}
 	}
 
 	if nextpc%2 != 0 {
-		return invalidPCAssignment{nextpc}
+		return invalidPCAssignmentError{nextpc}
 	}
 
 	mem.nextpc = nextpc
@@ -32,7 +34,7 @@ func (mem *Memory) IncPC() {
 		mem.pc = 0
 	}
 
-	mem.nextpc = mem.pc + 2
+	mem.nextpc = mem.pc + ops.InstBytes
 }
 
 func (mem *Memory) GetPC() uint16 {

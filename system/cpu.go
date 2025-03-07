@@ -4,7 +4,7 @@ import "github.com/ShyProton/chip8/system/ops"
 
 type InstTypeRunner = func(ops.Instruction) (bool, error)
 
-func (sys *System) Execute(inst ops.Instruction) error {
+func (sys *System) execute(inst ops.Instruction) error {
 	instructionTypeRunners := [...]InstTypeRunner{
 		sys.tryRunIfExact,
 		sys.tryRunIfAddr,

@@ -1,6 +1,10 @@
 package system
 
-import "github.com/ShyProton/chip8/system/ops"
+import (
+	"fmt"
+
+	"github.com/ShyProton/chip8/system/ops"
+)
 
 // Reg instructions include:
 // SKP, SKPNP, LDDT, LDK, DTLD, STLD, ADDI, LDF, LDB, LDV, VLD.
@@ -36,6 +40,10 @@ func (sys *System) tryRunIfReg(inst ops.Instruction) (bool, error) {
 		err = sys.memory.ReadToBytes(int(sys.registers.I), sys.registers.V[:x+1])
 	default:
 		return false, nil
+	}
+
+	if err != nil {
+		err = fmt.Errorf("reg instruction error:\n%w", err)
 	}
 
 	return true, err

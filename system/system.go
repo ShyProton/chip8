@@ -54,7 +54,7 @@ func (sys *System) Run() error {
 		even, odd := sys.memory.GetInstBytes()
 		inst := ops.InstFromBytes(even, odd)
 
-		if err := sys.Execute(inst); err != nil {
+		if err := sys.execute(inst); err != nil {
 			return instExecutionError{inst, err}
 		}
 	}
