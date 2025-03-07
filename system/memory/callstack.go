@@ -3,6 +3,8 @@ package memory
 import (
 	"errors"
 	"fmt"
+
+	"github.com/ShyProton/chip8/system/ops"
 )
 
 const stackSize = 16
@@ -21,7 +23,7 @@ func (mem *Memory) PushCallStack() error {
 	}
 
 	// The address we return to should be the one after the CALL instruction.
-	addr := mem.pc + 2
+	addr := mem.pc + ops.InstBytes
 	if addr >= memoryCapacity {
 		addr = 0
 	}

@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	romPath := "roms/3-corax+.ch8"
+	romPath := "roms/4-flags.ch8"
 
 	sys, err := system.NewSystem(romPath)
 	if err != nil {

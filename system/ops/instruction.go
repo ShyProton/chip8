@@ -1,11 +1,9 @@
-package system
+package ops
 
 const (
-	InstBits      = 16
+	InstBytes     = 2
 	BitsPerByte   = 8
-	InstBytes     = InstBits / BitsPerByte
 	BitsPerNibble = BitsPerByte / 2
-	InstNibbles   = InstBytes * 2
 )
 
 type Instruction uint16

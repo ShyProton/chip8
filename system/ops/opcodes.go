@@ -1,4 +1,4 @@
-package system
+package ops
 
 type Opcode = uint16
 type Mask = uint16
