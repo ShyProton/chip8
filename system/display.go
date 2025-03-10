@@ -87,32 +87,26 @@ func (io *IO) setOriginChars() {
 	io.originX, io.originY = originCharsX, originCharsY
 }
 
-func getDrawXY(x, y int) (int, int) {
-	drawX, drawY := x, y
-
-	if drawX >= DisplayWidth {
-		drawX -= DisplayWidth
-	}
-
-	if drawY >= DisplayHeight {
-		drawY -= DisplayHeight
-	}
-
-	return drawX, drawY
-}
-
-func (io *IO) DrawRow(x int, y int, row byte) bool {
+func (io *IO) DrawRow(x, y int, row byte) bool {
 	var erasure bool
 
 	for i := range ops.BitsPerByte {
-		drawX, drawY := getDrawXY(x+i, y)
+		drawX, drawY := x+i, y
+
+		if drawX >= DisplayWidth {
+			continue
+		}
+
+		if drawY >= DisplayHeight {
+			break
+		}
 
 		newPixel := utils.GetBinaryDigit(row, ops.BitsPerByte-1-i)
 		oldPixel := io.graphics.Buf.At(drawX, drawY)
 
 		newPixel ^= oldPixel
 
-		if newPixel == 0 && oldPixel == 1 {
+		if oldPixel == tcg.Black && newPixel == tcg.White {
 			erasure = true
 		}
 

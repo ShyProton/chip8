@@ -15,7 +15,9 @@ func (sys *System) tryRunIfTwoRegNib(inst ops.Instruction) (bool, error) {
 		return false, nil
 	}
 
-	drawX, drawY := int(sys.registers.V[x]), int(sys.registers.V[y])
+	drawX := int(sys.registers.V[x]) % DisplayWidth
+	drawY := int(sys.registers.V[y]) % DisplayHeight
+
 	erasure := false
 
 	for i := range int(n) {
